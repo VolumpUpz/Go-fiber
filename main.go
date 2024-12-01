@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/html/v2"
 )
 
 type Book struct {
@@ -15,8 +16,11 @@ var deptEmp []DepartmentEmployeeRequest
 var books []Book
 
 func main() {
+	engine := html.New("./views", ".html")
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Views: engine,
+	})
 
 	books = append(books, Book{ID: 1, Title: "benzlopster", Author: "Benz"})
 	books = append(books, Book{ID: 2, Title: "benzlopster2", Author: "Benz2"})
@@ -37,6 +41,8 @@ func main() {
 	app.Get("/deptemps", getDeptEmp)
 
 	app.Post("/upload", uploadFile)
+
+	app.Get("/test-html", testHtml)
 
 	app.Listen(":8080")
 }
