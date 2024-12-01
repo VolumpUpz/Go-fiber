@@ -1,8 +1,12 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
+	"github.com/joho/godotenv"
 )
 
 type Book struct {
@@ -16,6 +20,11 @@ var deptEmp []DepartmentEmployeeRequest
 var books []Book
 
 func main() {
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	engine := html.New("./views", ".html")
 
 	app := fiber.New(fiber.Config{
@@ -44,5 +53,19 @@ func main() {
 
 	app.Get("/test-html", testHtml)
 
+	app.Get("/config", getEnv)
+
 	app.Listen(":8080")
+}
+
+func getEnv(c *fiber.Ctx) error {
+	if secret := os.Getenv("SECRET"); secret == "" {
+		c.JSON(fiber.Map{
+			"SECRET": "default secret",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"SECRET": os.Getenv("SECRET"),
+	})
 }
