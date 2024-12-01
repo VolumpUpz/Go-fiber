@@ -1,0 +1,11 @@
+{
+    "department": {
+        "id": 1,
+        "name": "Developer"
+    }, 
+    "employee": {
+        "id": 1,
+        "name": "benz",
+        "salary": 1000000
+    }
+}
