@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	jwtware "github.com/gofiber/jwt/v2"
 	"github.com/gofiber/template/html/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 )
 
@@ -44,7 +46,15 @@ func main() {
 	books = append(books, Book{ID: 1, Title: "benzlopster", Author: "Benz"})
 	books = append(books, Book{ID: 2, Title: "benzlopster2", Author: "Benz2"})
 
+	app.Post("/login", login)
+
 	app.Use(checkMiddleware) //route api ที่อยู่ต่อจาก app.Use จะถูกเรียกใช้ middleware
+
+	// JWT Middleware
+	app.Use(jwtware.New(jwtware.Config{
+		SigningKey: []byte(os.Getenv("JWT_SECRET"))},
+	))
+
 	app.Get("/books", getBooks)
 	app.Get("books/:id", getBook)
 	app.Post("/books", createBook)
@@ -79,4 +89,44 @@ func getEnv(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"SECRET": os.Getenv("SECRET"),
 	})
+}
+
+type User struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+var memberUser = User{
+	Email:    "user@example.com",
+	Password: "password1234",
+}
+
+func login(c *fiber.Ctx) error {
+	user := new(User)
+
+	if err := c.BodyParser(user); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	if user.Email != memberUser.Email && user.Password != memberUser.Password {
+		return fiber.ErrUnauthorized
+	}
+
+	// Create token
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	// Set claims
+	claims := token.Claims.(jwt.MapClaims) //keep data of token and encrypt
+	claims["email"] = user.Email
+	claims["role"] = "admin"
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(fiber.Map{"token": t})
+
 }
