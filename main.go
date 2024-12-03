@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
@@ -19,6 +21,14 @@ var deptEmp []DepartmentEmployeeRequest
 
 var books []Book
 
+func checkMiddleware(c *fiber.Ctx) error {
+	start := time.Now()
+
+	fmt.Printf("URL = %s, Method = %s, Time = %s\n", c.OriginalURL(), c.Method(), start)
+
+	return c.Next()
+}
+
 func main() {
 
 	if err := godotenv.Load(); err != nil { //load env
@@ -34,6 +44,7 @@ func main() {
 	books = append(books, Book{ID: 1, Title: "benzlopster", Author: "Benz"})
 	books = append(books, Book{ID: 2, Title: "benzlopster2", Author: "Benz2"})
 
+	app.Use(checkMiddleware) //route api ที่อยู่ต่อจาก app.Use จะถูกเรียกใช้ middleware
 	app.Get("/books", getBooks)
 	app.Get("books/:id", getBook)
 	app.Post("/books", createBook)
