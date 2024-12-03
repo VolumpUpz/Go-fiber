@@ -28,6 +28,12 @@ func checkMiddleware(c *fiber.Ctx) error {
 
 	fmt.Printf("URL = %s, Method = %s, Time = %s\n", c.OriginalURL(), c.Method(), start)
 
+	user := c.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+
+	if claims["role"] != "admin" {
+		return fiber.ErrUnauthorized
+	}
 	return c.Next()
 }
 
@@ -48,12 +54,11 @@ func main() {
 
 	app.Post("/login", login)
 
-	app.Use(checkMiddleware) //route api ที่อยู่ต่อจาก app.Use จะถูกเรียกใช้ middleware
-
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{
 		SigningKey: []byte(os.Getenv("JWT_SECRET"))},
 	))
+	app.Use(checkMiddleware) //route api ที่อยู่ต่อจาก app.Use จะถูกเรียกใช้ middleware
 
 	app.Get("/books", getBooks)
 	app.Get("books/:id", getBook)
@@ -108,9 +113,9 @@ func login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 
-	if user.Email != memberUser.Email && user.Password != memberUser.Password {
-		return fiber.ErrUnauthorized
-	}
+	// if user.Email != memberUser.Email && user.Password != memberUser.Password {
+	// 	return fiber.ErrUnauthorized
+	// }
 
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -119,6 +124,12 @@ func login(c *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims) //keep data of token and encrypt
 	claims["email"] = user.Email
 	claims["role"] = "admin"
+	// if strings.Contains(user.Email, "ad") {
+	// 	claims["role"] = "admin"
+	// } else if strings.Contains(user.Email, "ur") {
+	// 	claims["role"] = "user"
+	// }
+
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
 	// Generate encoded token and send it as response.
