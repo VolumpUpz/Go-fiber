@@ -21,11 +21,11 @@ var books []Book
 
 func main() {
 
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(); err != nil { //load env
 		log.Fatal("Error loading .env file")
 	}
 
-	engine := html.New("./views", ".html")
+	engine := html.New("./views", ".html") //set default path call template
 
 	app := fiber.New(fiber.Config{
 		Views: engine,
